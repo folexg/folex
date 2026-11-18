@@ -48,6 +48,9 @@ $("go").onclick=go;$("u").onkeydown=e=>e.key==="Enter"&&go();
 // Receive links shared from other apps / ?url=
 const q=new URLSearchParams(location.search);const sh=q.get("url")||q.get("text");
 if(sh){$("u").value=(sh.match(/https?:\/\/\S+/)||[sh])[0];go()}
+function reset(){$("u").value="";$("res").hidden=true;$("err").textContent="";history.replaceState(null,"",location.pathname);$("u").focus()}
+$("v").onclick=$("a").onclick=()=>setTimeout(reset,1500);
+$("u").onfocus=()=>$("u").select();
 async function go(){
  const url=$("u").value.trim();$("err").textContent="";$("res").hidden=true;
  if(!url){$("err").textContent="Paste a link first.";return}

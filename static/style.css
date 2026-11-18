@@ -30,3 +30,4 @@ input[type=url]{flex:1;min-width:0;font:inherit;padding:14px;border-radius:8px;b
 footer{margin-top:40px;font-size:14px;display:flex;gap:16px}
 .doc h1{font-size:32px}.doc ul{padding-left:20px;margin:0 0 12px}.doc li{margin-bottom:6px}
 .how{margin-top:32px;border-top:1px solid var(--line);padding-top:8px}.how h3{font-size:16px;margin:16px 0 6px}.how ol{padding-left:20px;margin:0 0 12px}.how li{margin-bottom:6px}
+.steps{padding-left:20px;margin:0 0 12px}.steps li{margin-bottom:6px}

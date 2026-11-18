@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/static/style.css">
-<meta name="description" content="Paste a link from X or another site and save the video to your phone. Copy WhatsApp videos to your Downloads.">
+<meta name="description" content="Paste a link from X or another site and save the video to your phone. Save WhatsApp statuses to your Downloads.">
 <title>Folex Social Downloader</title>
 </head><body><main>
 <div id="install" class="install" hidden><p id="itext"></p><button id="ib" type="button" hidden>Install</button></div>
@@ -26,10 +26,15 @@
 <div class="row"><button id="v" type="button">Save video</button><button id="a" class="ghost" type="button">MP3</button></div></div></div>
 </section>
 <section id="panel-wa" role="tabpanel" aria-labelledby="tab-wa" hidden>
-<h2 style="margin-top:0">WhatsApp videos</h2>
-<p class="help">A website cannot browse WhatsApp's folders, so you pick the videos yourself. Choose the videos you viewed in WhatsApp, then save a copy to your Downloads. With the app installed you can also share a video from WhatsApp straight to Download.</p>
-<button id="pick" class="full" type="button">Choose videos</button>
-<input id="f" type="file" accept="video/*" multiple hidden>
+<h2 style="margin-top:0">WhatsApp statuses</h2>
+<p class="help">Open a status in WhatsApp first, and your phone keeps a copy in a hidden folder for about a day. A website cannot open that folder by itself, so you pick the files here and save them to your Downloads.</p>
+<ol class="steps">
+<li>Tap Choose files, then open Internal storage, Android, media, com.whatsapp, WhatsApp, Media, .Statuses. For WhatsApp Business, use com.whatsapp.w4b, then WhatsApp Business.</li>
+<li>Select the videos or photos you want, then tap Save next to each one.</li>
+</ol>
+<p class="help">If you cannot see the .Statuses folder, open Files by Google, turn on Show hidden files, select the statuses, tap Share and choose Download. Sharing works once the app is installed.</p>
+<button id="pick" class="full" type="button">Choose files</button>
+<input id="f" type="file" accept="video/*,image/*" multiple hidden>
 <ul id="list" class="files"></ul>
 <button id="clear" class="ghost" type="button" hidden>Clear list</button>
 </section>

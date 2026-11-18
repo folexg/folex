@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/static/style.css">
-<meta name="description" content="Paste a link from X or another site and save the video to your phone. Save WhatsApp statuses to your Downloads.">
+<meta name="description" content="Paste a link from X or another site and save the video to your phone.">
 <title>Folex Social Downloader</title>
 </head><body><main>
 <div id="install" class="install" hidden><p id="itext"></p><button id="ib" type="button" hidden>Install</button></div>
@@ -16,7 +16,7 @@
 <p class="sub">Paste a link from X or another site and save the video to your phone.</p>
 <div class="tabs" role="tablist">
 <button id="tab-links" role="tab" aria-controls="panel-links" aria-selected="true" type="button">Links</button>
-<button id="tab-wa" role="tab" aria-controls="panel-wa" aria-selected="false" tabindex="-1" type="button">WhatsApp</button>
+<button id="tab-history" role="tab" aria-controls="panel-history" aria-selected="false" tabindex="-1" type="button">History</button>
 </div>
 <section id="panel-links" role="tabpanel" aria-labelledby="tab-links">
 <div class="field"><input id="u" type="url" inputmode="url" placeholder="https://x.com/user/status/..." autocomplete="off" aria-label="Video link"><button id="p" class="ghost" type="button">Paste</button></div>
@@ -25,18 +25,13 @@
 <div id="res" class="card" hidden><img id="th" alt="" referrerpolicy="no-referrer"><div class="b"><h3 id="t"></h3><p id="m" class="m"></p>
 <div class="row"><button id="v" type="button">Save video</button><button id="a" class="ghost" type="button">MP3</button></div></div></div>
 </section>
-<section id="panel-wa" role="tabpanel" aria-labelledby="tab-wa" hidden>
-<h2 style="margin-top:0">WhatsApp statuses</h2>
-<p class="help">Open a status in WhatsApp first, and your phone keeps a copy in a hidden folder for about a day. A website cannot open that folder by itself, so you pick the files here and save them to your Downloads.</p>
-<ol class="steps">
-<li>Tap Choose files, then open Internal storage, Android, media, com.whatsapp, WhatsApp, Media, .Statuses. For WhatsApp Business, use com.whatsapp.w4b, then WhatsApp Business.</li>
-<li>Select the videos or photos you want, then tap Save next to each one.</li>
-</ol>
-<p class="help">If you cannot see the .Statuses folder, open Files by Google, turn on Show hidden files, select the statuses, tap Share and choose Download. Sharing works once the app is installed.</p>
-<button id="pick" class="full" type="button">Choose files</button>
-<input id="f" type="file" accept="video/*,image/*" multiple hidden>
-<ul id="list" class="files"></ul>
-<button id="clear" class="ghost" type="button" hidden>Clear list</button>
+<section id="panel-history" role="tabpanel" aria-labelledby="tab-history" hidden>
+<h2 style="margin-top:0">Download history</h2>
+<p class="help">This list is saved on this phone only. Tap Download again to save a video once more.</p>
+<p id="hst" class="status" role="status"></p><p id="herr" class="error" role="alert"></p>
+<p id="hempty" class="help">Nothing here yet. Videos you download will show up in this list.</p>
+<ul id="hlist" class="files hist"></ul>
+<button id="hclear" class="ghost" type="button" hidden>Clear history</button>
 </section>
 <section id="how" class="how" aria-labelledby="how-h">
 <h2 id="how-h">Add Download to your home screen</h2>
@@ -57,19 +52,20 @@
 </ol>
 </section>
 <footer><a href="/privacy">Privacy Policy</a><a href="/terms">Terms and Conditions</a></footer>
+<p class="credit">made by <span class="glow" role="img" aria-label="Folex">🅵🅾🅻🅴🆇</span></p>
 <script>
 const $=id=>document.getElementById(id);
-let busy=false,files=[],cur=null;
+let busy=false,cur=null,curMeta=null;
 const q=new URLSearchParams(location.search);
 
-function show(w){const wa=w==="wa";
- $("tab-links").setAttribute("aria-selected",String(!wa));$("tab-wa").setAttribute("aria-selected",String(wa));
- $("tab-links").tabIndex=wa?-1:0;$("tab-wa").tabIndex=wa?0:-1;$("panel-links").hidden=wa;$("panel-wa").hidden=!wa}
-$("tab-links").onclick=()=>show("links");$("tab-wa").onclick=()=>show("wa");
-document.querySelector(".tabs").onkeydown=e=>{if(e.key==="ArrowRight"){show("wa");$("tab-wa").focus()}if(e.key==="ArrowLeft"){show("links");$("tab-links").focus()}};
+function show(w){const h=w==="history";
+ $("tab-links").setAttribute("aria-selected",String(!h));$("tab-history").setAttribute("aria-selected",String(h));
+ $("tab-links").tabIndex=h?-1:0;$("tab-history").tabIndex=h?0:-1;$("panel-links").hidden=h;$("panel-history").hidden=!h}
+$("tab-links").onclick=()=>show("links");$("tab-history").onclick=()=>show("history");
+document.querySelector(".tabs").onkeydown=e=>{if(e.key==="ArrowRight"){show("history");$("tab-history").focus()}if(e.key==="ArrowLeft"){show("links");$("tab-links").focus()}};
 
-function msg(t,err){$("st").textContent=err?"":t;$("err").textContent=err?t:""}
-function reset(){$("u").value="";$("res").hidden=true;cur=null;history.replaceState(null,"","/");$("u").focus()}
+function msg(t,err){$("st").textContent=$("hst").textContent=err?"":t;$("err").textContent=$("herr").textContent=err?t:""}
+function reset(){$("u").value="";$("res").hidden=true;cur=null;curMeta=null;history.replaceState(null,"","/");$("u").focus()}
 $("p").onclick=async()=>{try{$("u").value=await navigator.clipboard.readText();go()}catch(e){$("u").focus()}};
 $("go").onclick=go;$("u").onkeydown=e=>{if(e.key==="Enter")go()};$("u").onfocus=()=>$("u").select();
 
@@ -83,44 +79,47 @@ async function go(){
   $("t").textContent=d.title;
   $("m").textContent=[d.site,d.duration?Math.round(d.duration)+" sec":""].filter(Boolean).join(", ");
   $("th").src=d.thumb||"";$("th").style.display=d.thumb?"block":"none";
-  cur=url;$("res").hidden=false;
+  cur=url;curMeta={title:d.title,site:d.site};$("res").hidden=false;
  }catch(x){msg(x.name==="TypeError"?"No connection. Check your internet and try again.":x.message,true)}
  $("go").textContent="Find video";$("go").disabled=false;
 }
 
+const HK="dl-history";
+function hget(){try{return JSON.parse(localStorage.getItem(HK))||[]}catch(e){return[]}}
+function hset(a){try{localStorage.setItem(HK,JSON.stringify(a.slice(0,50)))}catch(e){}}
+function setBusy(b){busy=b;$("v").disabled=$("a").disabled=b;document.querySelectorAll(".hb").forEach(x=>{x.disabled=b})}
+function hrender(){const a=hget(),ul=$("hlist");ul.textContent="";
+ $("hempty").hidden=a.length>0;$("hclear").hidden=!a.length;
+ a.forEach(e=>{const li=document.createElement("li"),d=document.createElement("div"),s=document.createElement("strong"),m=document.createElement("span"),r=document.createElement("div"),b=document.createElement("button"),x=document.createElement("button");
+  s.textContent=e.title||"Video";
+  m.textContent=[e.site,e.audio?"MP3":"Video",new Date(e.t).toLocaleDateString(undefined,{month:"short",day:"numeric"})].filter(Boolean).join(", ");
+  d.className="n";d.append(s,m);r.className="acts";
+  b.type=x.type="button";b.className="hb";b.textContent="Download again";b.disabled=busy;
+  b.onclick=()=>save(e.audio,e.url,{title:e.title,site:e.site},true);
+  x.className="ghost";x.textContent="Remove";
+  x.onclick=()=>{hset(hget().filter(y=>!(y.t===e.t&&y.url===e.url)));hrender()};
+  r.append(b,x);li.append(d,r);ul.append(li)})}
+$("hclear").onclick=()=>{hset([]);hrender()};
+
 function started(t){return document.cookie.split("; ").indexOf("dlstart="+t)>-1}
-function save(audio){
- if(busy||!cur)return;
- busy=true;$("v").disabled=$("a").disabled=true;msg("Preparing your download. This can take up to a minute.");
+function save(audio,url,meta,again){
+ if(busy||!url)return;
+ setBusy(true);msg("Preparing your download. This can take up to a minute.");
  const tok=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
  const fr=document.createElement("iframe");fr.hidden=true;fr.setAttribute("aria-hidden","true");
  const t0=Date.now();let over=false,timer;
- const end=(text,err)=>{if(over)return;over=true;clearInterval(timer);busy=false;$("v").disabled=$("a").disabled=false;
-  if(err)msg(text,true);else{msg(text);reset()}setTimeout(()=>fr.remove(),120000)};
+ const end=(text,err)=>{if(over)return;over=true;clearInterval(timer);setBusy(false);
+  if(err)msg(text,true);else{
+   const l=hget().filter(x=>!(x.url===url&&x.audio===audio));
+   l.unshift({url:url,audio:audio,title:(meta&&meta.title)||"Video",site:(meta&&meta.site)||"",t:Date.now()});
+   hset(l);hrender();msg(text);if(!again)reset()}
+  setTimeout(()=>fr.remove(),120000)};
  fr.onload=()=>started(tok)?end("Download started."):end("The download failed. The video may be private, removed or not supported.",true);
  timer=setInterval(()=>{if(started(tok))end("Download started.");else if(Date.now()-t0>180000)end("This is taking too long. Try again.",true)},300);
- fr.src="/api/download?"+(audio?"audio=1&":"")+"url="+encodeURIComponent(cur)+"&t="+tok;
+ fr.src="/api/download?"+(audio?"audio=1&":"")+"url="+encodeURIComponent(url)+"&t="+tok;
  document.body.appendChild(fr);
 }
-$("v").onclick=()=>save(false);$("a").onclick=()=>save(true);
-
-function fmt(n){return n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
-function saveFile(f){const u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name||"video.mp4";
- document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),120000)}
-function addFiles(list){for(const f of list){files.push(f);
- const li=document.createElement("li"),d=document.createElement("div"),s=document.createElement("strong"),m=document.createElement("span"),b=document.createElement("button");
- d.className="n";s.textContent=f.name||"video";m.textContent=fmt(f.size);d.append(s,m);
- b.type="button";b.textContent="Save";b.onclick=()=>{saveFile(f);b.textContent="Saved"};
- li.append(d,b);$("list").append(li)}
- $("clear").hidden=!files.length}
-$("pick").onclick=()=>$("f").click();
-$("f").onchange=e=>{const l=[...e.target.files];e.target.value="";addFiles(l)};
-$("clear").onclick=()=>{files=[];$("list").textContent="";$("clear").hidden=true;clearShared()};
-async function clearShared(){try{if("caches"in window)await caches.delete("shared-files")}catch(e){}}
-async function loadShared(){try{const c=await caches.open("shared-files"),out=[];
- for(const k of await c.keys()){const r=await c.match(k);if(!r)continue;const b=await r.blob();
-  out.push(new File([b],decodeURIComponent(r.headers.get("X-Name")||"video.mp4"),{type:b.type||"video/mp4"}))}
- if(out.length){addFiles(out);show("wa")}}catch(e){}}
+$("v").onclick=()=>save(false,cur,curMeta);$("a").onclick=()=>save(true,cur,curMeta);
 
 const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
 let dp=null;
@@ -135,12 +134,10 @@ if("serviceWorker"in navigator){
  const had=!!navigator.serviceWorker.controller;let reloaded=false;
  navigator.serviceWorker.register("/sw.js").then(reg=>{
   reg.update();document.addEventListener("visibilitychange",()=>{if(!document.hidden)reg.update()})}).catch(()=>{});
- navigator.serviceWorker.addEventListener("controllerchange",()=>{
-  if(!had||reloaded||busy||files.length)return;reloaded=true;location.reload()});
+ navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!had||reloaded||busy)return;reloaded=true;location.reload()});
 }
 
-if(location.hash==="#whatsapp")show("wa");
-if(q.get("shared")){loadShared();history.replaceState(null,"","/")}else clearShared();
+hrender();
 const sh=q.get("url")||q.get("text");
 if(sh){const m=sh.match(/https?:\/\/\S+/);$("u").value=m?m[0]:sh;go()}
 </script></main></body></html>

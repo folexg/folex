@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f3bff">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/static/style.css">
+<meta name="description" content="Paste a link from X or another site and save the video to your phone. Copy WhatsApp videos to your Downloads.">
+<title>Folex Social Downloader</title>
+</head><body><main>
+<div id="install" class="install" hidden><p id="itext"></p><button id="ib" type="button" hidden>Install</button></div>
+<h1>Folex Social Downloader</h1>
+<p class="sub">Paste a link from X or another site and save the video to your phone.</p>
+<div class="tabs" role="tablist">
+<button id="tab-links" role="tab" aria-controls="panel-links" aria-selected="true" type="button">Links</button>
+<button id="tab-wa" role="tab" aria-controls="panel-wa" aria-selected="false" tabindex="-1" type="button">WhatsApp</button>
+</div>
+<section id="panel-links" role="tabpanel" aria-labelledby="tab-links">
+<div class="field"><input id="u" type="url" inputmode="url" placeholder="https://x.com/user/status/..." autocomplete="off" aria-label="Video link"><button id="p" class="ghost" type="button">Paste</button></div>
+<button id="go" class="full" type="button">Find video</button>
+<p id="st" class="status" role="status"></p><p id="err" class="error" role="alert"></p>
+<div id="res" class="card" hidden><img id="th" alt="" referrerpolicy="no-referrer"><div class="b"><h3 id="t"></h3><p id="m" class="m"></p>
+<div class="row"><button id="v" type="button">Save video</button><button id="a" class="ghost" type="button">MP3</button></div></div></div>
+</section>
+<section id="panel-wa" role="tabpanel" aria-labelledby="tab-wa" hidden>
+<h2 style="margin-top:0">WhatsApp videos</h2>
+<p class="help">A website cannot browse WhatsApp's folders, so you pick the videos yourself. Choose the videos you viewed in WhatsApp, then save a copy to your Downloads. With the app installed you can also share a video from WhatsApp straight to Download.</p>
+<button id="pick" class="full" type="button">Choose videos</button>
+<input id="f" type="file" accept="video/*" multiple hidden>
+<ul id="list" class="files"></ul>
+<button id="clear" class="ghost" type="button" hidden>Clear list</button>
+</section>
+<section id="how" class="how" aria-labelledby="how-h">
+<h2 id="how-h">Add Download to your home screen</h2>
+<p class="help">Do this once and the app opens like any other app on your phone.</p>
+<h3>Android (Chrome)</h3>
+<ol>
+<li>Open this site in Chrome.</li>
+<li>Tap Install in the box at the top of the page. If you do not see it, tap the three dots at the top right of Chrome.</li>
+<li>Tap Add to Home screen, or Install app.</li>
+<li>Tap Install, then Add.</li>
+</ol>
+<h3>iPhone (Safari)</h3>
+<ol>
+<li>Open this site in Safari.</li>
+<li>Tap the Share button, the square with an arrow pointing up, at the bottom of the screen.</li>
+<li>Scroll down and tap Add to Home Screen.</li>
+<li>Tap Add at the top right.</li>
+</ol>
+</section>
+<footer><a href="/privacy">Privacy Policy</a><a href="/terms">Terms and Conditions</a></footer>
+<script>
+const $=id=>document.getElementById(id);
+let busy=false,files=[],cur=null;
+const q=new URLSearchParams(location.search);
+
+function show(w){const wa=w==="wa";
+ $("tab-links").setAttribute("aria-selected",String(!wa));$("tab-wa").setAttribute("aria-selected",String(wa));
+ $("tab-links").tabIndex=wa?-1:0;$("tab-wa").tabIndex=wa?0:-1;$("panel-links").hidden=wa;$("panel-wa").hidden=!wa}
+$("tab-links").onclick=()=>show("links");$("tab-wa").onclick=()=>show("wa");
+document.querySelector(".tabs").onkeydown=e=>{if(e.key==="ArrowRight"){show("wa");$("tab-wa").focus()}if(e.key==="ArrowLeft"){show("links");$("tab-links").focus()}};
+
+function msg(t,err){$("st").textContent=err?"":t;$("err").textContent=err?t:""}
+function reset(){$("u").value="";$("res").hidden=true;cur=null;history.replaceState(null,"","/");$("u").focus()}
+$("p").onclick=async()=>{try{$("u").value=await navigator.clipboard.readText();go()}catch(e){$("u").focus()}};
+$("go").onclick=go;$("u").onkeydown=e=>{if(e.key==="Enter")go()};$("u").onfocus=()=>$("u").select();
+
+async function go(){
+ const url=$("u").value.trim();msg("");$("res").hidden=true;
+ if(!url){msg("Paste a link first.",true);return}
+ $("go").textContent="Checking link";$("go").disabled=true;
+ try{
+  const r=await fetch("/api/info?url="+encodeURIComponent(url));const d=await r.json();
+  if(!r.ok)throw new Error(d.error||"Something went wrong.");
+  $("t").textContent=d.title;
+  $("m").textContent=[d.site,d.duration?Math.round(d.duration)+" sec":""].filter(Boolean).join(", ");
+  $("th").src=d.thumb||"";$("th").style.display=d.thumb?"block":"none";
+  cur=url;$("res").hidden=false;
+ }catch(x){msg(x.name==="TypeError"?"No connection. Check your internet and try again.":x.message,true)}
+ $("go").textContent="Find video";$("go").disabled=false;
+}
+
+function started(t){return document.cookie.split("; ").indexOf("dlstart="+t)>-1}
+function save(audio){
+ if(busy||!cur)return;
+ busy=true;$("v").disabled=$("a").disabled=true;msg("Preparing your download. This can take up to a minute.");
+ const tok=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+ const fr=document.createElement("iframe");fr.hidden=true;fr.setAttribute("aria-hidden","true");
+ const t0=Date.now();let over=false,timer;
+ const end=(text,err)=>{if(over)return;over=true;clearInterval(timer);busy=false;$("v").disabled=$("a").disabled=false;
+  if(err)msg(text,true);else{msg(text);reset()}setTimeout(()=>fr.remove(),120000)};
+ fr.onload=()=>started(tok)?end("Download started."):end("The download failed. The video may be private, removed or not supported.",true);
+ timer=setInterval(()=>{if(started(tok))end("Download started.");else if(Date.now()-t0>180000)end("This is taking too long. Try again.",true)},300);
+ fr.src="/api/download?"+(audio?"audio=1&":"")+"url="+encodeURIComponent(cur)+"&t="+tok;
+ document.body.appendChild(fr);
+}
+$("v").onclick=()=>save(false);$("a").onclick=()=>save(true);
+
+function fmt(n){return n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
+function saveFile(f){const u=URL.createObjectURL(f),a=document.createElement("a");a.href=u;a.download=f.name||"video.mp4";
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),120000)}
+function addFiles(list){for(const f of list){files.push(f);
+ const li=document.createElement("li"),d=document.createElement("div"),s=document.createElement("strong"),m=document.createElement("span"),b=document.createElement("button");
+ d.className="n";s.textContent=f.name||"video";m.textContent=fmt(f.size);d.append(s,m);
+ b.type="button";b.textContent="Save";b.onclick=()=>{saveFile(f);b.textContent="Saved"};
+ li.append(d,b);$("list").append(li)}
+ $("clear").hidden=!files.length}
+$("pick").onclick=()=>$("f").click();
+$("f").onchange=e=>{const l=[...e.target.files];e.target.value="";addFiles(l)};
+$("clear").onclick=()=>{files=[];$("list").textContent="";$("clear").hidden=true;clearShared()};
+async function clearShared(){try{if("caches"in window)await caches.delete("shared-files")}catch(e){}}
+async function loadShared(){try{const c=await caches.open("shared-files"),out=[];
+ for(const k of await c.keys()){const r=await c.match(k);if(!r)continue;const b=await r.blob();
+  out.push(new File([b],decodeURIComponent(r.headers.get("X-Name")||"video.mp4"),{type:b.type||"video/mp4"}))}
+ if(out.length){addFiles(out);show("wa")}}catch(e){}}
+
+const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+let dp=null;
+if(standalone)$("how").hidden=true;
+function banner(t){if(standalone)return;$("itext").textContent=t;$("install").hidden=false}
+addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;$("ib").hidden=false;banner("Install this app to open it from your home screen. It updates itself.")});
+$("ib").onclick=async()=>{if(!dp)return;dp.prompt();try{await dp.userChoice}catch(e){}dp=null;$("install").hidden=true};
+addEventListener("appinstalled",()=>{$("install").hidden=true});
+if(/iphone|ipad|ipod/i.test(navigator.userAgent))banner("To install this app, tap Share, then Add to Home Screen.");
+
+if("serviceWorker"in navigator){
+ const had=!!navigator.serviceWorker.controller;let reloaded=false;
+ navigator.serviceWorker.register("/sw.js").then(reg=>{
+  reg.update();document.addEventListener("visibilitychange",()=>{if(!document.hidden)reg.update()})}).catch(()=>{});
+ navigator.serviceWorker.addEventListener("controllerchange",()=>{
+  if(!had||reloaded||busy||files.length)return;reloaded=true;location.reload()});
+}
+
+if(location.hash==="#whatsapp")show("wa");
+if(q.get("shared")){loadShared();history.replaceState(null,"","/")}else clearShared();
+const sh=q.get("url")||q.get("text");
+if(sh){const m=sh.match(/https?:\/\/\S+/);$("u").value=m?m[0]:sh;go()}
+</script></main></body></html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f3bff">
+<link rel="manifest" href="/manifest.json">
+<title>Folex Social Downloader</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f1ec;--ink:#14161f;--blue:#1f3bff;--mut:#6b6f7e;--card:#fff;--err:#c4262e;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1117;--ink:#f2f2f5;--blue:#6f84ff;--mut:#9a9eb0;--card:#1a1d27;--err:#ff7a80;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.4 "Bricolage Grotesque",system-ui,sans-serif;min-height:100dvh;padding:max(28px,env(safe-area-inset-top)) 20px max(28px,env(safe-area-inset-bottom))}
+main{max-width:480px;margin:0 auto}
+h1{font-weight:800;font-size:clamp(40px,13vw,60px);line-height:.95;letter-spacing:-.03em;margin:8vh 0 12px}
+p.sub{color:var(--mut);margin:0 0 28px}
+.field{display:flex;gap:8px}
+input{flex:1;min-width:0;font:inherit;padding:16px;border-radius:14px;border:2px solid var(--ink);background:var(--card);color:var(--ink)}
+input:focus{outline:3px solid var(--blue);outline-offset:2px}
+button,a.btn{font:inherit;font-weight:800;border:0;border-radius:14px;padding:16px 18px;background:var(--blue);color:#fff;cursor:pointer;text-decoration:none;text-align:center;display:block}
+button.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+#res{margin-top:24px;background:var(--card);border-radius:18px;overflow:hidden}
+#res[hidden]{display:none}
+#res img{width:100%;display:block;max-height:240px;object-fit:cover;background:#000}
+#res .b{padding:16px}
+#t{font-weight:800;margin:0 0 4px}
+#m{color:var(--mut);margin:0 0 14px;font-size:14px}
+.row{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+#err{color:var(--err);margin-top:16px;min-height:1.4em}
+</style></head><body><main>
+<h1>Folex Social Downloader</h1>
+<p class="sub">Paste a link from X or any other site. Get the video.</p>
+<div class="field">
+<input id="u" type="url" inputmode="url" placeholder="https://x.com/…/status/…" autocomplete="off" aria-label="Video link">
+<button id="p" class="ghost" type="button">Paste</button>
+</div>
+<button id="go" type="button" style="width:100%;margin-top:8px">Find video</button>
+<div id="err" role="alert"></div>
+<section id="res" hidden>
+<img id="th" alt="">
+<div class="b"><p id="t"></p><p id="m"></p>
+<div class="row"><a id="v" class="btn" href="#">Save video</a><a id="a" class="btn" style="background:transparent;color:var(--ink);border:2px solid var(--ink)" href="#">MP3</a></div></div>
+</section>
+<script>
+const $=id=>document.getElementById(id);
+$("p").onclick=async()=>{try{$("u").value=await navigator.clipboard.readText();go()}catch{$("u").focus()}};
+$("go").onclick=go;$("u").onkeydown=e=>e.key==="Enter"&&go();
+// Receive links shared from other apps / ?url=
+const q=new URLSearchParams(location.search);const sh=q.get("url")||q.get("text");
+if(sh){$("u").value=(sh.match(/https?:\/\/\S+/)||[sh])[0];go()}
+async function go(){
+ const url=$("u").value.trim();$("err").textContent="";$("res").hidden=true;
+ if(!url){$("err").textContent="Paste a link first.";return}
+ $("go").textContent="Looking…";$("go").disabled=true;
+ try{
+  const r=await fetch("/api/info?url="+encodeURIComponent(url));const d=await r.json();
+  if(!r.ok)throw new Error(d.error||"Something went wrong.");
+  $("t").textContent=d.title;
+  $("m").textContent=[d.site,d.duration?Math.round(d.duration)+" sec":""].filter(Boolean).join(", ");
+  $("th").src=d.thumb||"";$("th").style.display=d.thumb?"block":"none";
+  const e=encodeURIComponent(url);
+  $("v").href="/api/download?url="+e;$("a").href="/api/download?audio=1&url="+e;
+  $("res").hidden=false;
+ }catch(x){$("err").textContent=x.message}
+ $("go").textContent="Find video";$("go").disabled=false;
+}
+</script></main></body></html>

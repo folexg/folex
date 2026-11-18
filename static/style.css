@@ -33,6 +33,4 @@ footer{margin-top:40px;font-size:14px;display:flex;gap:16px}
 .steps{padding-left:20px;margin:0 0 12px}.steps li{margin-bottom:6px}
 .hist li{display:block}.hist .acts{display:flex;gap:8px;margin-top:10px}.hist .acts button{padding:10px 14px}
 .credit{margin:20px 0 0;font-size:14px;color:var(--mut)}
-.glow{color:var(--ac);font-weight:800;letter-spacing:.14em;text-shadow:0 0 6px var(--ac),0 0 16px var(--ac);animation:glow 3.5s ease-in-out infinite}
-@keyframes glow{50%{text-shadow:0 0 3px var(--ac),0 0 8px var(--ac)}}
-@media(prefers-reduced-motion:reduce){.glow{animation:none}}
+.glow{color:var(--ink);font-weight:800;letter-spacing:.14em;padding-bottom:2px;border-bottom:2px solid var(--ac);text-shadow:0 0 10px color-mix(in srgb,var(--ac) 45%,transparent)}

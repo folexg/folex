@@ -1,5 +1,5 @@
 import os, re, tempfile, shutil
-from flask import Flask, request, jsonify, send_file, send_from_directory, after_this_request
+from flask import Flask, request, jsonify, send_file, send_from_directory, after_this_request, redirect
 import yt_dlp
 
 app = Flask(__name__, static_folder="static")
@@ -9,13 +9,44 @@ def clean(url):
     url = (url or "").strip()
     return url if URL_RE.match(url) else None
 
+def page(name, **kw):
+    return send_from_directory("static", name, **kw)
+
+@app.after_request
+def headers(r):
+    r.headers.setdefault("Cache-Control", "no-cache")
+    r.headers["X-Content-Type-Options"] = "nosniff"
+    return r
+
 @app.get("/")
 def home():
-    return send_from_directory("static", "index.html")
+    return page("index.html")
+
+@app.get("/privacy")
+def privacy():
+    return page("privacy.html")
+
+@app.get("/terms")
+def terms():
+    return page("terms.html")
 
 @app.get("/manifest.json")
 def manifest():
-    return send_from_directory("static", "manifest.json")
+    return page("manifest.json", mimetype="application/manifest+json")
+
+@app.get("/sw.js")
+def sw():
+    r = page("sw.js", mimetype="text/javascript")
+    r.headers["Service-Worker-Allowed"] = "/"
+    return r
+
+@app.get("/favicon.ico")
+def favicon():
+    return page("favicon.ico")
+
+@app.post("/share-target")
+def share_fallback():
+    return redirect("/", code=303)
 
 @app.get("/api/info")
 def info():
@@ -27,13 +58,14 @@ def info():
             d = y.extract_info(url, download=False)
         return jsonify(title=d.get("title") or "Video", thumb=d.get("thumbnail"),
                        duration=d.get("duration"), site=d.get("extractor_key"))
-    except Exception as e:
-        return jsonify(error="Couldn't read that link. It may be private, deleted or unsupported."), 422
+    except Exception:
+        return jsonify(error="Could not read that link. It may be private, removed or not supported."), 422
 
 @app.get("/api/download")
 def download():
     url = clean(request.args.get("url"))
     audio = request.args.get("audio") == "1"
+    tok = re.sub(r"[^A-Za-z0-9]", "", request.args.get("t", ""))[:40]
     if not url:
         return "Bad link", 400
     tmp = tempfile.mkdtemp()
@@ -54,7 +86,12 @@ def download():
     def _c(r):
         shutil.rmtree(tmp, ignore_errors=True)
         return r
-    return send_file(f, as_attachment=True)
+
+    resp = send_file(f, as_attachment=True)
+    resp.headers["Cache-Control"] = "no-store"
+    if tok:
+        resp.set_cookie("dlstart", tok, max_age=120, path="/", samesite="Lax")
+    return resp
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

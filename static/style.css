@@ -23,7 +23,7 @@ input[type=url]{flex:1;min-width:0;font:inherit;padding:14px;border-radius:8px;b
 .card{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .card img{width:100%;display:block;max-height:240px;object-fit:cover;background:#000}
 .card .b{padding:16px}.card h3{font-size:16px;margin:0 0 4px}.card .m{color:var(--mut);font-size:14px;margin:0 0 14px}
-.row{display:grid;grid-template-columns:2fr 1fr;gap:8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .files{list-style:none;margin:16px 0;padding:0;display:grid;gap:8px}
 .files li{display:flex;gap:12px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px}
 .files .n{min-width:0}.files strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.files span{color:var(--mut);font-size:14px}
@@ -34,3 +34,4 @@ footer{margin-top:40px;font-size:14px;display:flex;gap:16px}
 .hist li{display:block}.hist .acts{display:flex;gap:8px;margin-top:10px}.hist .acts button{padding:10px 14px}
 .credit{margin:20px 0 0;font-size:14px;color:var(--mut)}
 .glow{color:var(--ink);font-weight:800;letter-spacing:.14em;padding-bottom:2px;border-bottom:2px solid var(--ac);text-shadow:0 0 10px color-mix(in srgb,var(--ac) 45%,transparent)}
+.after{margin-top:16px;border:1px solid var(--line);background:var(--card);border-radius:8px;padding:14px}.after p{margin:0 0 10px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.after button{width:100%}.hist .acts{flex-wrap:wrap}.contact{margin:4px 0 0;font-size:14px}

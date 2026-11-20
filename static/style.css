@@ -1,5 +1,5 @@
-:root{--bg:#e8edf5;--ink:#0f1420;--mut:#475069;--ac:#1f3bff;--on:#fff;--err:#b3202a;--glass:rgba(255,255,255,.55);--glass2:rgba(255,255,255,.78);--edge:rgba(255,255,255,.8);--line:rgba(15,20,32,.16);--shade:rgba(20,30,60,.14);--b1:rgba(31,59,255,.38);--b2:rgba(0,185,200,.38);--b3:rgba(255,170,90,.38);color-scheme:light dark}
-@media(prefers-color-scheme:dark){:root{--bg:#090d15;--ink:#f2f4f8;--mut:#b4bacb;--ac:#6aa1ff;--on:#0b1020;--err:#ff8a90;--glass:rgba(255,255,255,.08);--glass2:rgba(255,255,255,.17);--edge:rgba(255,255,255,.2);--line:rgba(255,255,255,.18);--shade:rgba(0,0,0,.5);--b1:rgba(40,80,255,.42);--b2:rgba(0,170,190,.26);--b3:rgba(255,150,70,.12)}}
+:root{--bg:#e8edf5;--ink:#0f1420;--mut:#475069;--ac:#1f3bff;--on:#fff;--err:#b3202a;--glass:rgba(255,255,255,.55);--glass2:rgba(255,255,255,.78);--edge:rgba(255,255,255,.8);--line:rgba(15,20,32,.16);--shade:rgba(20,30,60,.14);--b1:rgba(31,59,255,.38);--b2:rgba(0,185,200,.38);--b3:rgba(255,170,90,.38);--hl:rgba(255,255,255,.34);--hl2:rgba(255,255,255,.5);color-scheme:light dark}
+@media(prefers-color-scheme:dark){:root{--bg:#090d15;--ink:#f2f4f8;--mut:#b4bacb;--ac:#6aa1ff;--on:#0b1020;--err:#ff8a90;--glass:rgba(255,255,255,.08);--glass2:rgba(255,255,255,.17);--edge:rgba(255,255,255,.2);--line:rgba(255,255,255,.18);--shade:rgba(0,0,0,.5);--b1:rgba(40,80,255,.42);--b2:rgba(0,170,190,.26);--b3:rgba(255,150,70,.12);--hl:rgba(255,255,255,.22);--hl2:rgba(255,255,255,.12)}}
 *{box-sizing:border-box}[hidden]{display:none!important}
 html{background:var(--bg)}
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(60vmax 60vmax at 10% 6%,var(--b1),transparent 62%),radial-gradient(55vmax 55vmax at 96% 22%,var(--b2),transparent 62%),radial-gradient(60vmax 60vmax at 68% 100%,var(--b3),transparent 62%),var(--bg)}
@@ -10,14 +10,15 @@ h2{font-size:20px;margin:24px 0 6px}
 p{margin:0 0 12px}.sub,.help{color:var(--mut)}.sub{margin-bottom:20px}
 a{color:var(--ac)}
 .install,.card,.after,.how,.doc,.tabs{background:var(--glass);border:1px solid var(--edge);-webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);box-shadow:inset 0 1px 0 var(--edge),0 10px 30px var(--shade)}
-button{font:inherit;font-weight:700;border:0;border-radius:14px;padding:14px 18px;background:var(--ac);color:var(--on);cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 8px 20px color-mix(in srgb,var(--ac) 35%,transparent)}
-button.ghost{background:var(--glass);color:var(--ink);border:1px solid var(--line);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:inset 0 1px 0 var(--edge)}
+button{font:inherit;font-weight:700;border:1px solid rgba(255,255,255,.5);border-radius:16px;padding:14px 18px;color:var(--on);cursor:pointer;background:linear-gradient(180deg,var(--hl),rgba(255,255,255,0) 55%),color-mix(in srgb,var(--ac) 85%,transparent);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);box-shadow:inset 0 1px 1px rgba(255,255,255,.65),inset 0 -10px 18px rgba(255,255,255,.08),0 10px 24px color-mix(in srgb,var(--ac) 32%,transparent);transition:transform .12s ease,filter .12s ease}
+button:active:not(:disabled){transform:scale(.97);filter:brightness(.94)}
+button.ghost{color:var(--ink);border:1px solid var(--edge);background:linear-gradient(180deg,var(--hl2),rgba(255,255,255,0) 60%),var(--glass);box-shadow:inset 0 1px 1px var(--edge),0 6px 16px var(--shade)}
 button:disabled{opacity:.55;cursor:default}
 :focus-visible{outline:3px solid var(--ac);outline-offset:2px}
 .install{border-radius:18px;padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:8px}
 .install p{margin:0;font-size:15px}
 .tabs{display:flex;gap:4px;padding:4px;border-radius:18px;margin:20px 0}
-.tabs button{flex:1;background:none;color:var(--mut);border:0;border-radius:14px;padding:11px 8px;box-shadow:none}
+.tabs button{flex:1;background:none;color:var(--mut);border:0;border-radius:14px;padding:11px 8px;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
 .tabs button[aria-selected=true]{background:var(--glass2);color:var(--ink);box-shadow:inset 0 1px 0 var(--edge),0 2px 10px var(--shade)}
 .field{display:flex;gap:8px}
 input[type=url]{flex:1;min-width:0;font:inherit;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--glass2);color:var(--ink);box-shadow:inset 0 1px 0 var(--edge)}
@@ -43,3 +44,4 @@ footer{margin-top:32px;font-size:14px;display:flex;gap:16px}
 .contact{margin:4px 0 0;font-size:14px}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.install,.card,.after,.how,.doc,.tabs{background:var(--bg)}}
 @media(prefers-reduced-transparency:reduce){.install,.card,.after,.how,.doc,.tabs,button.ghost{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none}}
+@media(prefers-reduced-motion:reduce){button{transition:none}button:active:not(:disabled){transform:none}}

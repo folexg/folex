@@ -4,10 +4,34 @@ import yt_dlp
 
 app = Flask(__name__, static_folder="static")
 URL_RE = re.compile(r"^https?://", re.I)
+VIDEO_FMT = "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b"
 
 def clean(url):
     url = (url or "").strip()
     return url if URL_RE.match(url) else None
+
+def est(f, dur):
+    s = f.get("filesize") or f.get("filesize_approx")
+    if s:
+        return int(s)
+    tbr = f.get("tbr") or ((f.get("vbr") or 0) + (f.get("abr") or 0))
+    return int(tbr * 125 * dur) if tbr and dur else 0
+
+def sizes(d):
+    dur = d.get("duration") or 0
+    parts = [est(f, dur) for f in (d.get("requested_formats") or [d])]
+    video = sum(parts) if parts and all(parts) else 0
+    audio = int(dur * 16250) if dur else 0
+    return video or None, audio or None
+
+def probe(url):
+    base = {"quiet": True, "skip_download": True, "noplaylist": True}
+    try:
+        with yt_dlp.YoutubeDL({**base, "format": VIDEO_FMT}) as y:
+            return y.extract_info(url, download=False)
+    except Exception:
+        with yt_dlp.YoutubeDL(base) as y:
+            return y.extract_info(url, download=False)
 
 def page(name, **kw):
     return send_from_directory("static", name, **kw)
@@ -54,10 +78,11 @@ def info():
     if not url:
         return jsonify(error="Paste a full link starting with https://"), 400
     try:
-        with yt_dlp.YoutubeDL({"quiet": True, "skip_download": True, "noplaylist": True}) as y:
-            d = y.extract_info(url, download=False)
+        d = probe(url)
+        vsize, asize = sizes(d)
         return jsonify(title=d.get("title") or "Video", thumb=d.get("thumbnail"),
-                       duration=d.get("duration"), site=d.get("extractor_key"))
+                       duration=d.get("duration"), site=d.get("extractor_key"),
+                       vsize=vsize, asize=asize)
     except Exception:
         return jsonify(error="Could not read that link. It may be private, removed or not supported."), 422
 
@@ -70,7 +95,7 @@ def download():
         return "Bad link", 400
     tmp = tempfile.mkdtemp()
     opts = {"quiet": True, "noplaylist": True, "outtmpl": os.path.join(tmp, "%(title).80s.%(ext)s"),
-            "format": "bestaudio/best" if audio else "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b",
+            "format": "bestaudio/best" if audio else VIDEO_FMT,
             "merge_output_format": "mp4"}
     if audio:
         opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3"}]

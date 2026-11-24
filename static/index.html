@@ -79,13 +79,14 @@ async function go(){
   const r=await fetch("/api/info?url="+encodeURIComponent(url));const d=await r.json();
   if(!r.ok)throw new Error(d.error||"Something went wrong.");
   $("t").textContent=d.title;
-  $("m").textContent=[d.site,d.duration?Math.round(d.duration)+" sec":""].filter(Boolean).join(", ");
+  $("m").textContent=[d.site,d.duration?Math.round(d.duration)+" sec":"",d.vsize?"Video about "+fsz(d.vsize):"",d.asize?"Audio about "+fsz(d.asize):""].filter(Boolean).join(", ");
   $("th").src=d.thumb||"";$("th").style.display=d.thumb?"block":"none";
-  cur=url;curMeta={title:d.title,site:d.site};$("res").hidden=false;
+  cur=url;curMeta={title:d.title,site:d.site,vsize:d.vsize,asize:d.asize};$("res").hidden=false;
  }catch(x){msg(x.name==="TypeError"?"No connection. Check your internet and try again.":x.message,true)}
  $("go").textContent="Find video";$("go").disabled=false;
 }
 
+function fsz(n){return n>=1073741824?(n/1073741824).toFixed(1)+" GB":n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
 const HK="dl-history";
 function hget(){try{return JSON.parse(localStorage.getItem(HK))||[]}catch(e){return[]}}
 function hset(a){try{localStorage.setItem(HK,JSON.stringify(a.slice(0,50)))}catch(e){}}
@@ -94,10 +95,10 @@ function hrender(){const a=hget(),ul=$("hlist");ul.textContent="";
  $("hempty").hidden=a.length>0;$("hclear").hidden=!a.length;
  a.forEach(e=>{const li=document.createElement("li"),d=document.createElement("div"),s=document.createElement("strong"),m=document.createElement("span"),r=document.createElement("div"),b=document.createElement("button"),x=document.createElement("button");
   s.textContent=e.title||"Video";
-  m.textContent=[e.site,e.audio?"MP3":"Video",new Date(e.t).toLocaleDateString(undefined,{month:"short",day:"numeric"})].filter(Boolean).join(", ");
+  m.textContent=[e.site,e.audio?"MP3":"Video",e.size?"about "+fsz(e.size):"",new Date(e.t).toLocaleDateString(undefined,{month:"short",day:"numeric"})].filter(Boolean).join(", ");
   d.className="n";d.append(s,m);r.className="acts";
   b.type=x.type="button";b.className="hb";b.textContent="Download again";b.disabled=busy;
-  b.onclick=()=>save(e.audio,e.url,{title:e.title,site:e.site},true);
+  b.onclick=()=>save(e.audio,e.url,{title:e.title,site:e.site,vsize:e.audio?0:e.size,asize:e.audio?e.size:0},true);
   x.className="ghost";x.textContent="Remove";
   x.onclick=()=>{hset(hget().filter(y=>!(y.t===e.t&&y.url===e.url)));hrender()};
   const sb=document.createElement("button");sb.type="button";sb.className="ghost";setupShare(sb,e);r.append(b,sb,x);li.append(d,r);ul.append(li)})}
@@ -138,7 +139,7 @@ function save(audio,url,meta,again){
  const end=(text,err)=>{if(over)return;over=true;clearInterval(timer);setBusy(false);
   if(err)msg(text,true);else{
    const l=hget().filter(x=>!(x.url===url&&x.audio===audio));
-   l.unshift({url:url,audio:audio,title:(meta&&meta.title)||"Video",site:(meta&&meta.site)||"",t:Date.now()});
+   l.unshift({url:url,audio:audio,title:(meta&&meta.title)||"Video",site:(meta&&meta.site)||"",size:(meta&&(audio?meta.asize:meta.vsize))||0,t:Date.now()});
    hset(l);hrender();msg(text);if(!again){reset();$("at").textContent=l[0].title;setupShare($("sh"),l[0]);$("after").hidden=false}}
   setTimeout(()=>fr.remove(),120000)};
  fr.onload=()=>started(tok)?end("Download started."):end("The download failed. The video may be private, removed or not supported.",true);
